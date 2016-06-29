@@ -201,10 +201,12 @@ namespace Cousin.ASN
                 {
                     MySqlDataReader readerPrintLabel;
 
-                    BarTender.ApplicationClass btApp;
+                    BarTender.Application btApp;
+                    //BarTender.ApplicationClass btApp;
                     BarTender.Format btFormat;
 
-                    btApp = new BarTender.ApplicationClass();
+                    btApp = new BarTender.Application();
+                    //btApp = new BarTender.ApplicationClass();
 
                     string shipmentID = "";
                     int myNumBoxes = boxNumber;

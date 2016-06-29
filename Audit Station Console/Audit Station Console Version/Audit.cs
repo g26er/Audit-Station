@@ -87,7 +87,7 @@ namespace Audit_Station_Console_Version
 
                     #region Order Scanned   "^(900|999)\d{6}$"
 
-                    if (Regex.IsMatch(scannedText, @"^(900|999|700)\d{6}$"))
+                    if (Regex.IsMatch(scannedText, @"^(999|900|800|700)\d{6}$"))
                     {
                         if (myOrder == null)
                         {
