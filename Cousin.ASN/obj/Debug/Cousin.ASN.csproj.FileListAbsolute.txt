@@ -1,0 +1,10 @@
+C:\Users\jason\Documents\GitHub\Audit-Station\Audit Station Console\Cousin.ASN\obj\Debug\Cousin.ASN.csprojResolveAssemblyReference.cache
+C:\Users\jason\Documents\GitHub\Audit-Station\Audit Station Console\Cousin.ASN\obj\Debug\Interop.BarTender.dll
+C:\Users\jason\Documents\GitHub\Audit-Station\Audit Station Console\Cousin.ASN\obj\Debug\Cousin.ASN.csproj.ResolveComReference.cache
+C:\Users\jason\Documents\GitHub\Audit-Station\Audit Station Console\Cousin.ASN\bin\Debug\ASN.cs
+C:\Users\jason\Documents\GitHub\Audit-Station\Audit Station Console\Cousin.ASN\bin\Debug\Cousin.ASN.dll.config
+C:\Users\jason\Documents\GitHub\Audit-Station\Audit Station Console\Cousin.ASN\bin\Debug\Cousin.ASN.dll
+C:\Users\jason\Documents\GitHub\Audit-Station\Audit Station Console\Cousin.ASN\bin\Debug\Cousin.ASN.pdb
+C:\Users\jason\Documents\GitHub\Audit-Station\Audit Station Console\Cousin.ASN\bin\Debug\MySql.Data.dll
+C:\Users\jason\Documents\GitHub\Audit-Station\Audit Station Console\Cousin.ASN\obj\Debug\Cousin.ASN.dll
+C:\Users\jason\Documents\GitHub\Audit-Station\Audit Station Console\Cousin.ASN\obj\Debug\Cousin.ASN.pdb
