@@ -169,8 +169,8 @@ namespace Audit_Station_Console_Version
                     #endregion
 
                     #region UPC Scanned "^016321\d{6}$"
-
-                    else if (Regex.IsMatch(scannedText, @"^\d{12}$") || Regex.IsMatch(scannedText, @"^400044\d{6}$"))
+                    // Jason added support for 191648###### UPC's on 11/17/2017
+                    else if (Regex.IsMatch(scannedText, @"^\d{12}$") || Regex.IsMatch(scannedText, @"^191648\d{6}$") || Regex.IsMatch(scannedText, @"^400044\d{6}$"))
                     {
                         if (myOrder == null)
                         {
