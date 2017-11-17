@@ -246,5 +246,5 @@ ModelManifest.xml
 *.exe
 
 
-*/bin/
-*/obj/
+bin/*
+obj/*
