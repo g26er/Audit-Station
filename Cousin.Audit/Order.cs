@@ -577,13 +577,14 @@ namespace Cousin.Audit
 
         private void logMissingItems()
         {
-            List<string> upcsNotInStock;
+            List<string> itemsNotInStock;
 
             using (MySqlConnection myConn = new MySqlConnection(ConnectionString))
             {
                 using (MySqlCommand myCommand = myConn.CreateCommand())
                 {
-                    upcsNotInStock = new List<string>();
+                    // Jason was renamed from upcNotInStock to itemNotInStock on 11/17/2017
+                    itemsNotInStock = new List<string>();
 
                     // Get items not in stock
                     string sql = "SELECT upc, item_num FROM items_not_on_pick_line";
@@ -600,10 +601,12 @@ namespace Cousin.Audit
                             // Insert out of stock items into list
                             while (myReader.Read())
                             {
-                                string upc = myReader.GetString(myReader.GetOrdinal("upc"));
-                                if (!upcsNotInStock.Contains(upc))
+                                // Jason was upc, changed to itemNumber on 11/17/2017
+                                // string upc = myReader.GetString(myReader.GetOrdinal("upc"));
+                                string itemNumber = myReader.GetString(myReader.GetOrdinal("item_num"));
+                                if (!itemsNotInStock.Contains(itemNumber))
                                 {
-                                    upcsNotInStock.Add(upc);
+                                    itemsNotInStock.Add(itemNumber);
                                 }
                             }
                         } 
@@ -623,7 +626,9 @@ namespace Cousin.Audit
             {
                 foreach (ItemOrdered itOrd in ItemsOrdered.Values)
                 {
-                    if (upcsNotInStock.Contains(itOrd.UPCNumber))
+                    // Jason was UPCNumber, changed to ItemNumber on 11/17/2017
+                    // if (itemsNotInStock.Contains(itOrd.UPCNumber))
+                    if (itemsNotInStock.Contains(itOrd.ItemNumber))
                     {
                         continue;
                     }
@@ -1645,7 +1650,7 @@ namespace Cousin.Audit
                     Items.Add(upc, new Item(number, description, binLoc, conversionFactor, problem));
             }
 
-            //Commit items to database
+            //Commit items to log table
             public void LogWrite(int orderScans, int orderConvFactor)
             {
                 //check to see if there are any errors and if not log a perfect audit
