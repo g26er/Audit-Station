@@ -50,7 +50,7 @@ namespace Cousin.Audit
         }
         public Dictionary<string, ItemOrdered> ItemsOrdered;
         public Dictionary<int, Dictionary<string, ItemScanned>> Box;
-        public string orderNumber { get; private set; }//public readonly string orderNumber;
+        public string OrderNumber { get; private set; }//public readonly string orderNumber;
 
         private bool myLoggedMissing = false; //When print missing items, log it, but not more than once
         private const string ConnectionString = "server=192.168.123.24;user id=audit;password=audit;database=audit";
@@ -58,7 +58,7 @@ namespace Cousin.Audit
 
         public Order(string orderNumber)
         {
-            this.orderNumber = orderNumber;
+            this.OrderNumber = orderNumber;
             this.myLogger = new MistakeLogger(orderNumber);
             CreateOrder();
         }
@@ -68,9 +68,9 @@ namespace Cousin.Audit
 
         void CreateOrder()
         {
-            using(MySqlConnection myConn = new MySqlConnection(ConnectionString))
+            using (MySqlConnection myConn = new MySqlConnection(ConnectionString))
             {
-                using(MySqlCommand myCommand = myConn.CreateCommand())
+                using (MySqlCommand myCommand = myConn.CreateCommand())
                 {
                     // Creat dictionaries to hold ordered and scanned items
                     ItemsOrdered = new Dictionary<string, ItemOrdered>();
@@ -79,24 +79,24 @@ namespace Cousin.Audit
                     // Get items ordered
                     string sql = "SELECT cousin_sku_number, cousin_sku_description, upc_number, ordered_qty, weight, conversion_factor, bin_loc FROM audit_detail WHERE order_number = ?ORDERNUMBER";
                     myCommand.CommandText = sql;
-                    myCommand.Parameters.AddWithValue("?ORDERNUMBER", this.orderNumber);
+                    myCommand.Parameters.AddWithValue("?ORDERNUMBER", this.OrderNumber);
                     try
                     {
                         myConn.Open();
                         MySqlDataReader myReader = myCommand.ExecuteReader(System.Data.CommandBehavior.CloseConnection);
 
                         // If there are no rows then order number doesn't exist
-                        if(!myReader.HasRows)
+                        if (!myReader.HasRows)
                         {
-                            string msg = this.orderNumber + " doesn't exist";
+                            string msg = this.OrderNumber + " doesn't exist";
                             throw new ApplicationException(msg);
                         }
 
                         // Fill itemsOrdered dictionary
-                        while(myReader.Read())
+                        while (myReader.Read())
                         {
                             string upc = myReader.GetString(myReader.GetOrdinal("upc_number"));
-                            if(ItemsOrdered.ContainsKey(upc))
+                            if (ItemsOrdered.ContainsKey(upc))
                                 ItemsOrdered[upc].OrderedQTY += myReader.GetInt32(myReader.GetOrdinal("ordered_qty"));
                             else
                             {
@@ -105,14 +105,14 @@ namespace Cousin.Audit
                             }
                         }
                     }
-                    catch(Exception err)
+                    catch (Exception err)
                     {
-                        if(OnMySqlError != null)
+                        if (OnMySqlError != null)
                             OnMySqlError(this, new ErrorEventArgs(err.Message.ToString()));
                         else
                             throw new ApplicationException(err.Message.ToString());
                     }
-                    
+
                 }
             }
         }
@@ -125,11 +125,12 @@ namespace Cousin.Audit
         // this is only used for michaels CA and will go away shortly
         public static void SetBoxWeight(string orderNumber, int boxNumber, float weight)
         {
-            if(GetCustomer(orderNumber) == Customer.Joann || GetCustomer(orderNumber) == Customer.Acmoore)
+            Customer currentCustomer = GetCustomer(orderNumber);
+            if (currentCustomer == Customer.Joann || currentCustomer == Customer.Acmoore)
             {
-                using(MySqlConnection myConn = new MySqlConnection(ConnectionString))
+                using (MySqlConnection myConn = new MySqlConnection(ConnectionString))
                 {
-                    using(MySqlCommand myCommand = myConn.CreateCommand())
+                    using (MySqlCommand myCommand = myConn.CreateCommand())
                     {
                         myCommand.CommandText = "UPDATE audit_box_header SET box_weight = ?WEIGHT" +
                             " WHERE order_number = ?ORDERNUMBER and box_number = ?BOXNUMBER";
@@ -141,16 +142,16 @@ namespace Cousin.Audit
                             myConn.Open();
                             myCommand.ExecuteNonQuery();
                         }
-                        catch(Exception err)
+                        catch (Exception err)
                         {
-                            if(OnMySqlError != null)
+                            if (OnMySqlError != null)
                                 OnMySqlError(null, new ErrorEventArgs(err.Message.ToString()));
                             else
                                 throw new ApplicationException(err.Message.ToString());
                         }
                         finally
                         {
-                            if(myConn.State != System.Data.ConnectionState.Closed)
+                            if (myConn.State != System.Data.ConnectionState.Closed)
                                 myConn.Close();
                         }
                     }
@@ -158,19 +159,24 @@ namespace Cousin.Audit
             }
             else
             {
-                if(OnError != null)
+                /*if (OnError != null)
+                {
+                    // Jason need to figure out who needs boxes weighed 12/01/2017
                     OnError(null, new ErrorEventArgs("This is used for Joann only"));
+                }
                 else
+                {
                     throw new ApplicationException("This is used for Joann only");
+                }*/
             }
         }
 
         public static int GetStatus(string orderNumber)
         {
             int status = 0;
-            using(MySqlConnection myConn = new MySqlConnection(ConnectionString))
+            using (MySqlConnection myConn = new MySqlConnection(ConnectionString))
             {
-                using(MySqlCommand myCommand = myConn.CreateCommand())
+                using (MySqlCommand myCommand = myConn.CreateCommand())
                 {
                     myCommand.CommandText = "SELECT status FROM audit_header WHERE order_number = ?ORDERNUMBER";
                     myCommand.Parameters.AddWithValue("?ORDERNUMBER", orderNumber);
@@ -178,19 +184,19 @@ namespace Cousin.Audit
                     {
                         myConn.Open();
                         object crap = myCommand.ExecuteScalar();
-                        if(crap != null)
+                        if (crap != null)
                             int.TryParse(crap.ToString(), out status);
                     }
-                    catch(Exception err)
+                    catch (Exception err)
                     {
-                        if(OnMySqlError != null)
+                        if (OnMySqlError != null)
                             OnMySqlError(null, new ErrorEventArgs(err.Message.ToString()));
                         else
                             throw new ApplicationException(err.Message.ToString());
                     }
                     finally
                     {
-                        if(myConn.State != System.Data.ConnectionState.Closed)
+                        if (myConn.State != System.Data.ConnectionState.Closed)
                             myConn.Close();
                     }
                 }
@@ -235,9 +241,9 @@ namespace Cousin.Audit
 
         public static int[] GetBoxNumbers(string orderNumber)
         {
-            if(!Exists(orderNumber))
+            if (!Exists(orderNumber))
             {
-                if(OnError != null)
+                if (OnError != null)
                 {
                     OnError(null, new ErrorEventArgs("Order " + orderNumber + " doesn't exist"));
                     return new int[0];
@@ -247,13 +253,12 @@ namespace Cousin.Audit
             }
 
             List<int> boxNumbers = new List<int>();
-            int currBoxNumber;
 
-            if(GetStatus(orderNumber) == 3)
+            if (GetStatus(orderNumber) == 3)
             {
-                using(MySqlConnection myConn = new MySqlConnection(ConnectionString))
+                using (MySqlConnection myConn = new MySqlConnection(ConnectionString))
                 {
-                    using(MySqlCommand myCommand = myConn.CreateCommand())
+                    using (MySqlCommand myCommand = myConn.CreateCommand())
                     {
                         myCommand.CommandText = "SELECT DISTINCT box_number FROM audit_box_header WHERE order_number = ?ORDERNUMBER";
                         myCommand.Parameters.AddWithValue("?ORDERNUMBER", orderNumber);
@@ -261,22 +266,22 @@ namespace Cousin.Audit
                         {
                             myConn.Open();
                             MySqlDataReader myReader = myCommand.ExecuteReader();
-                            while(myReader.Read())
+                            while (myReader.Read())
                             {
-                                if(int.TryParse(myReader.GetString(0), out currBoxNumber))
+                                if (int.TryParse(myReader.GetString(0), out int currBoxNumber))
                                     boxNumbers.Add(currBoxNumber);
                             }
                         }
-                        catch(Exception err)
+                        catch (Exception err)
                         {
-                            if(OnMySqlError != null)
+                            if (OnMySqlError != null)
                                 OnMySqlError(null, new ErrorEventArgs(err.Message.ToString()));
                             else
                                 throw new ApplicationException(err.Message.ToString());
                         }
                         finally
                         {
-                            if(myConn.State != System.Data.ConnectionState.Closed)
+                            if (myConn.State != System.Data.ConnectionState.Closed)
                                 myConn.Close();
                         }
                     }
@@ -284,7 +289,7 @@ namespace Cousin.Audit
             }
             else
             {
-                if(OnError != null)
+                if (OnError != null)
                     OnError(null, new ErrorEventArgs("Order " + orderNumber + " does not have a status of FINISHED"));
                 else
                     throw new ApplicationException("Order " + orderNumber + " does not have a status of FINISHED");
@@ -296,9 +301,9 @@ namespace Cousin.Audit
         {
             bool exists = false;
 
-            using(MySqlConnection myConn = new MySqlConnection(ConnectionString))
+            using (MySqlConnection myConn = new MySqlConnection(ConnectionString))
             {
-                using(MySqlCommand myCommand = myConn.CreateCommand())
+                using (MySqlCommand myCommand = myConn.CreateCommand())
                 {
                     myCommand.CommandText = "Select Count(*) From audit_detail Where order_number = ?ORDERNUMBER";
                     myCommand.Parameters.AddWithValue("?ORDERNUMBER", orderNumber);
@@ -306,14 +311,14 @@ namespace Cousin.Audit
                     {
                         myConn.Open();
                         object result = myCommand.ExecuteScalar();
-                        if(int.Parse(result.ToString()) > 0)
+                        if (int.Parse(result.ToString()) > 0)
                         {
                             exists = true;
                         }
                     }
-                    catch(Exception err)
+                    catch (Exception err)
                     {
-                        if(OnMySqlError != null)
+                        if (OnMySqlError != null)
                         {
                             OnMySqlError(null, new ErrorEventArgs(err.Message.ToString()));
                         }
@@ -333,9 +338,9 @@ namespace Cousin.Audit
             string customerNumber = string.Empty;
             Customer currentCustomer;
 
-            using(MySqlConnection myConn = new MySqlConnection(ConnectionString))
+            using (MySqlConnection myConn = new MySqlConnection(ConnectionString))
             {
-                using(MySqlCommand myCommand = myConn.CreateCommand())
+                using (MySqlCommand myCommand = myConn.CreateCommand())
                 {
                     MySqlDataReader myReader;
                     myCommand.CommandText = @"SELECT audit_shipment.ship_to_name, audit_header.customer_number
@@ -349,9 +354,9 @@ namespace Cousin.Audit
                     {
                         myConn.Open();
                         myReader = myCommand.ExecuteReader();
-                        if(myReader.HasRows)
+                        if (myReader.HasRows)
                         {
-                            while(myReader.Read())
+                            while (myReader.Read())
                             {
                                 shipToName = myReader.GetString(myReader.GetOrdinal("ship_to_name"));
                                 customerNumber = myReader.GetString(myReader.GetOrdinal("customer_number"));
@@ -360,7 +365,7 @@ namespace Cousin.Audit
                         }
                         else
                         {
-                            if(OnError != null)
+                            if (OnError != null)
                             {
                                 OnError(null, new ErrorEventArgs("Order " + orderNumber + " doesn't exist"));
                             }
@@ -370,13 +375,13 @@ namespace Cousin.Audit
                             }
                         }
                     }
-                    catch(ApplicationException)
+                    catch (ApplicationException)
                     {
                         throw;
                     }
-                    catch(Exception err)
+                    catch (Exception err)
                     {
-                        if(OnMySqlError != null)
+                        if (OnMySqlError != null)
                         {
                             OnMySqlError(null, new ErrorEventArgs(err.Message.ToString()));
                         }
@@ -387,17 +392,17 @@ namespace Cousin.Audit
                     }
                     finally
                     {
-                        if(myConn.State != System.Data.ConnectionState.Closed)
+                        if (myConn.State != System.Data.ConnectionState.Closed)
                         {
                             myConn.Close();
                         }
                     }
                 }
             }
-            switch(customerNumber)
+            switch (customerNumber)
             {
                 case "136873":
-                    if(shipToName.ToLower().Contains("canada"))
+                    if (shipToName.ToLower().Contains("canada"))
                     {
                         currentCustomer = Customer.MichaelsCA;
                     }
@@ -446,13 +451,140 @@ namespace Cousin.Audit
             return currentCustomer;
         }
 
+        // GetCustomerNameNumber added by Jason on 11-30-2017 - copied and edited GetCustomer
+        public static Dictionary<string, string> GetCustomerNameNumber(string orderNumber)
+        {
+            string shipToName = string.Empty;
+            string customerNumber = string.Empty;
+            //Customer currentCustomer;
+
+            using (MySqlConnection myConn = new MySqlConnection(ConnectionString))
+            {
+                using (MySqlCommand myCommand = myConn.CreateCommand())
+                {
+                    MySqlDataReader myReader;
+                    myCommand.CommandText = @"SELECT audit_shipment.ship_to_name, audit_header.customer_number
+                        FROM audit_header LEFT JOIN audit_shipment ON audit_header.shipment_id = audit_shipment.shipment_id
+                        WHERE audit_header.order_number = ?ORDERNUMBER
+                        LIMIT 1";
+                    myCommand.Parameters.Clear();
+                    myCommand.Parameters.AddWithValue("?ORDERNUMBER", orderNumber);
+
+                    try
+                    {
+                        myConn.Open();
+                        myReader = myCommand.ExecuteReader();
+                        if (myReader.HasRows)
+                        {
+                            while (myReader.Read())
+                            {
+                                shipToName = myReader.GetString(myReader.GetOrdinal("ship_to_name"));
+                                customerNumber = myReader.GetString(myReader.GetOrdinal("customer_number"));
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            if (OnError != null)
+                            {
+                                OnError(null, new ErrorEventArgs("Order " + orderNumber + " doesn't exist"));
+                            }
+                            else
+                            {
+                                throw new ApplicationException("Order " + orderNumber + " doesn't exist");
+                            }
+                        }
+                    }
+                    catch (ApplicationException)
+                    {
+                        throw;
+                    }
+                    catch (Exception err)
+                    {
+                        if (OnMySqlError != null)
+                        {
+                            OnMySqlError(null, new ErrorEventArgs(err.Message.ToString()));
+                        }
+                        else
+                        {
+                            throw new ApplicationException(err.Message.ToString());
+                        }
+                    }
+                    finally
+                    {
+                        if (myConn.State != System.Data.ConnectionState.Closed)
+                        {
+                            myConn.Close();
+                        }
+                    }
+                }
+            }
+
+            Dictionary<string, string> customerInfo = new Dictionary<string, string>(2)
+            {
+                { "name", shipToName },
+                { "number", customerNumber }
+            };
+            return customerInfo;
+            /*switch (customerNumber)
+            {
+                case "136873":
+                    if (shipToName.ToLower().Contains("canada"))
+                    {
+                        currentCustomer = Customer.MichaelsCA;
+                    }
+                    else
+                    {
+                        currentCustomer = Customer.MichaelsUS;
+                    }
+                    break;
+                case "160454":
+                    currentCustomer = Customer.WalmartUS;
+                    break;
+                case "51173":
+                    currentCustomer = Customer.Hancock;
+                    break;
+                case "231058":
+                    currentCustomer = Customer.WalmartCA;
+                    break;
+                case "224590":
+                    currentCustomer = Customer.Joann;
+                    break;
+                case "7731":
+                    currentCustomer = Customer.Acmoore;
+                    break;
+                case "235890":
+                    currentCustomer = Customer.Amazon;
+                    break;
+                case "235891": // added by Jason 4-22-13
+                    currentCustomer = Customer.AmazonCanada;
+                    break;
+                case "235942":
+                    currentCustomer = Customer.Meijer;
+                    break;
+                default:
+                    //if(OnError != null)
+                    //{
+                    //    OnError(null, new ErrorEventArgs("Unknown customer number: " + customerNumber));
+                    //}
+                    //else
+                    //{
+                    //    throw new ApplicationException("Unknown customer number: " + customerNumber);
+                    //}
+                    //currentCustomer = Customer.Unknown;
+                    currentCustomer = Customer.Generic;
+                    break;
+            }
+            return currentCustomer;*/
+        }
+
         public static DateTime GetAuditDate(string orderNumber)
         {
             DateTime auditDate = DateTime.Parse("2000-01-01");
 
-            using(MySqlConnection myConn = new MySqlConnection(ConnectionString))
+            using (MySqlConnection myConn = new MySqlConnection(ConnectionString))
             {
-                using(MySqlCommand myCommand = myConn.CreateCommand())
+                using (MySqlCommand myCommand = myConn.CreateCommand())
                 {
                     myCommand.CommandText = "SELECT audit_date FROM audit_header WHERE audit_date <> '0000-00-00' AND order_number = ?ORDERNUMBER";
                     myCommand.Parameters.AddWithValue("?ORDERNUMBER", orderNumber);
@@ -460,17 +592,17 @@ namespace Cousin.Audit
                     {
                         myConn.Open();
                         object result = myCommand.ExecuteScalar();
-                        if(result != null)
+                        if (result != null)
                         {
-                            if(!DateTime.TryParse(result.ToString(), out auditDate))
+                            if (!DateTime.TryParse(result.ToString(), out auditDate))
                             {
                                 auditDate = DateTime.Parse("2000-01-01");
                             }
                         }
                     }
-                    catch(Exception err)
+                    catch (Exception err)
                     {
-                        if(OnMySqlError != null)
+                        if (OnMySqlError != null)
                         {
                             OnMySqlError(null, new ErrorEventArgs(err.Message.ToString()));
                         }
@@ -575,19 +707,24 @@ namespace Cousin.Audit
 
         #endregion
 
-        private void logMissingItems()
+
+
+
+
+        private void LogMissingItems()
         {
-            List<string> itemsNotInStock;
+            List<string> upcNotInStock;
 
             using (MySqlConnection myConn = new MySqlConnection(ConnectionString))
             {
                 using (MySqlCommand myCommand = myConn.CreateCommand())
                 {
                     // Jason was renamed from upcNotInStock to itemNotInStock on 11/17/2017
-                    itemsNotInStock = new List<string>();
+                    // Went back to checking UPC's and not item numbers itemNotInStock -> upcNotInStock - Jason 03/13/2018
+                    upcNotInStock = new List<string>();
 
                     // Get items not in stock
-                    string sql = "SELECT upc, item_num FROM items_not_on_pick_line";
+                    string sql = "SELECT upc, item_num FROM items_not_on_pick_line WHERE used_for = 'all' OR used_for = 'audit'";
                     myCommand.CommandText = sql;
                     myCommand.Parameters.Clear();
                     try
@@ -602,14 +739,15 @@ namespace Cousin.Audit
                             while (myReader.Read())
                             {
                                 // Jason was upc, changed to itemNumber on 11/17/2017
-                                // string upc = myReader.GetString(myReader.GetOrdinal("upc"));
+                                // Changed itemNumber back to upc itemNumber -> upc - Jason 03/13/2018
                                 string itemNumber = myReader.GetString(myReader.GetOrdinal("item_num"));
-                                if (!itemsNotInStock.Contains(itemNumber))
+                                string upc = myReader.GetString(myReader.GetOrdinal("upc"));
+                                if (!upcNotInStock.Contains(upc))
                                 {
-                                    itemsNotInStock.Add(itemNumber);
+                                    upcNotInStock.Add(upc);
                                 }
                             }
-                        } 
+                        }
                     }
                     catch (Exception err)
                     {
@@ -627,8 +765,9 @@ namespace Cousin.Audit
                 foreach (ItemOrdered itOrd in ItemsOrdered.Values)
                 {
                     // Jason was UPCNumber, changed to ItemNumber on 11/17/2017
+                    // Changed back to UPCNumber instead of ItemNumber ItemNumber -> UPCNumber - Jason 03/13/2018
                     // if (itemsNotInStock.Contains(itOrd.UPCNumber))
-                    if (itemsNotInStock.Contains(itOrd.ItemNumber))
+                    if (upcNotInStock.Contains(itOrd.UPCNumber))
                     {
                         continue;
                     }
@@ -641,6 +780,9 @@ namespace Cousin.Audit
             myLoggedMissing = true;
         }
 
+
+
+
         #region Public Methods
 
         public bool IsFinished()
@@ -648,9 +790,9 @@ namespace Cousin.Audit
             // Compares ordered vs scanned qty of items ordered
             // to see if order is finished
             bool finished = true;
-            foreach(ItemOrdered itm in ItemsOrdered.Values)
+            foreach (ItemOrdered itm in ItemsOrdered.Values)
             {
-                if(itm.OrderedQTY > itm.ScannedQTY)
+                if (itm.OrderedQTY > itm.ScannedQTY)
                 {
                     finished = false;
                     break;
@@ -661,21 +803,21 @@ namespace Cousin.Audit
 
         public void ReleaseCompleteOneBox()
         {
-            foreach(ItemOrdered itmOrd in ItemsOrdered.Values)
+            foreach (ItemOrdered itmOrd in ItemsOrdered.Values)
             {
                 do
                 {
                     ScanItemForCompleteOneBox(itmOrd.UPCNumber, 1);
-                } while(itmOrd.ScannedQTY < itmOrd.OrderedQTY);
+                } while (itmOrd.ScannedQTY < itmOrd.OrderedQTY);
             }
         }
 
         public bool OrderHasScans()
         {
             bool hasScans = false;
-            foreach(ItemOrdered itOrd in ItemsOrdered.Values)
+            foreach (ItemOrdered itOrd in ItemsOrdered.Values)
             {
-                if(itOrd.ScannedQTY > 0)
+                if (itOrd.ScannedQTY > 0)
                 {
                     hasScans = true;
                     break;
@@ -687,7 +829,7 @@ namespace Cousin.Audit
         public bool BoxHasScans(int boxNumber)
         {
             bool hasScans = false;
-            if(Box.ContainsKey(boxNumber))
+            if (Box.ContainsKey(boxNumber))
             {
                 hasScans = true;
             }
@@ -710,15 +852,15 @@ namespace Cousin.Audit
         {
             // Checks ItemsOrdered dictionary to see if upc
             // belongs on current order
-            if(ItemsOrdered.ContainsKey(upc))
+            if (ItemsOrdered.ContainsKey(upc))
             {
                 // Checks to see if this item is complete
-                if(ItemsOrdered[upc].OrderedQTY > ItemsOrdered[upc].ScannedQTY)
+                if (ItemsOrdered[upc].OrderedQTY > ItemsOrdered[upc].ScannedQTY)
                 {
-                    if(boxNumber > GetNextBoxNumber())
+                    if (boxNumber > GetNextBoxNumber())
                     {
                         string msg = "Next available box# is: " + GetNextBoxNumber().ToString();
-                        if(OnError != null)
+                        if (OnError != null)
                         {
                             OnError(this, new ErrorEventArgs(msg));
                             return;
@@ -726,36 +868,33 @@ namespace Cousin.Audit
                         else
                             throw new ApplicationException(msg);
                     }
-                    if(!Box.ContainsKey(boxNumber))
+                    if (!Box.ContainsKey(boxNumber))
                     {
                         Dictionary<string, ItemScanned> tmp = new Dictionary<string, ItemScanned>();
                         Box.Add(boxNumber, tmp);
-                        if(OnNewBox != null)
-                        {
-                            OnNewBox(this, boxNumber);
-                        }
+                        OnNewBox?.Invoke(this, boxNumber);
                     }
 
-                    if(Box[boxNumber].ContainsKey(upc))
+                    if (Box[boxNumber].ContainsKey(upc))
                     {
                         Box[boxNumber][upc].ScannedQTY += ItemsOrdered[upc].ConversionFactor;
                         Box[boxNumber][upc].ScannedWeight += ItemsOrdered[upc].Weight;
                     }
                     else
                     {
-                        Box[boxNumber].Add(upc, new ItemScanned(upc, ItemsOrdered[upc].ItemNumber, ItemsOrdered[upc].ItemDescription,ItemsOrdered[upc].OrderedQTY, ItemsOrdered[upc].ConversionFactor, ItemsOrdered[upc].Weight));
+                        Box[boxNumber].Add(upc, new ItemScanned(upc, ItemsOrdered[upc].ItemNumber, ItemsOrdered[upc].ItemDescription, ItemsOrdered[upc].OrderedQTY, ItemsOrdered[upc].ConversionFactor, ItemsOrdered[upc].Weight));
                     }
                     ItemsOrdered[upc].ScannedQTY += ItemsOrdered[upc].ConversionFactor;
 
                     // Check to see if OrderIsFinished
                     // and call the FinishOrder method if true
-                    if(IsFinished())
+                    if (IsFinished())
                         FinishOrder();
                 }
                 else
                 {
                     string msg = upc + " already scanned and complete for this order.";
-                    if(OnError != null)
+                    if (OnError != null)
                     {
                         OnError(this, new ErrorEventArgs(msg));
                         return;
@@ -767,7 +906,7 @@ namespace Cousin.Audit
             else
             {
                 string msg = upc + " is not on this order.";
-                if(OnError != null)
+                if (OnError != null)
                 {
                     OnError(this, new ErrorEventArgs(msg));
                     return;
@@ -782,10 +921,10 @@ namespace Cousin.Audit
             bool orderIsFinished;
             // Checks ItemsOrdered dictionary to see if upc
             // belongs on current order
-            if(ItemsOrdered.ContainsKey(upc))
+            if (ItemsOrdered.ContainsKey(upc))
             {
                 // Checks to see if this item is complete
-                if(ItemsOrdered[upc].OrderedQTY > ItemsOrdered[upc].ScannedQTY)
+                if (ItemsOrdered[upc].OrderedQTY > ItemsOrdered[upc].ScannedQTY)
                 {
                     if (boxNumber > GetNextBoxNumber())
                     {
@@ -801,12 +940,9 @@ namespace Cousin.Audit
 
                     if (!Box.ContainsKey(boxNumber))
                     {
-                        Dictionary<string,ItemScanned> tmp = new Dictionary<string,ItemScanned>();
+                        Dictionary<string, ItemScanned> tmp = new Dictionary<string, ItemScanned>();
                         Box.Add(boxNumber, tmp);
-                        if(OnNewBox != null)
-                        {
-                            OnNewBox(this, boxNumber);
-                        }
+                        OnNewBox?.Invoke(this, boxNumber);
                     }
 
                     if (Box[boxNumber].ContainsKey(upc))
@@ -823,10 +959,7 @@ namespace Cousin.Audit
                     orderIsFinished = IsFinished();
 
                     // call the UPCScanned EVENT
-                    if (OnUPCScanned != null)
-                    {
-                        OnUPCScanned(this, new UPCScannedEventArgs(upc, boxNumber, ItemsOrdered[upc].ConversionFactor, ItemsOrdered[upc].ScannedQTY, ItemsOrdered[upc].OrderedQTY, orderIsFinished));
-                    }
+                    OnUPCScanned?.Invoke(this, new UPCScannedEventArgs(upc, boxNumber, ItemsOrdered[upc].ConversionFactor, ItemsOrdered[upc].ScannedQTY, ItemsOrdered[upc].OrderedQTY, orderIsFinished));
 
                     // Check to see if OrderIsFinished
                     // and call the FinishOrder method if true
@@ -856,7 +989,9 @@ namespace Cousin.Audit
                 string msg = upc + " was not ordered on order number:" + this.ToString();
                 //Add code here to log a upc that was not on this order
                 //LogWrongItem() added March 18th, 2015 - Jason
-                myLogger.LogItem("9999999999", "Unordered Item", upc, "00A00", 1, MistakeLogger.Item.Reason.Wrong);
+                Dictionary<string, string> itemInfo = MistakeLogger.GetItemInfo(upc);
+                // Added real info since creating GetItemInfo() by Jason on 11/30/2017
+                myLogger.LogItem(itemInfo["itemNumber"], itemInfo["itemDescription"], upc, itemInfo["itemBay"], 1, MistakeLogger.Item.Reason.Wrong);
 
                 if (OnError != null)
                 {
@@ -881,15 +1016,15 @@ namespace Cousin.Audit
                         "DELETE FROM log WHERE order_number = ?ORDERNUMBER; " +
                         "DELETE FROM log_scanned_order_info WHERE order_number = ?ORDERNUMBER;";
                     myCommand.Parameters.Clear();
-                    myCommand.Parameters.AddWithValue("?ORDERNUMBER", this.orderNumber);
+                    myCommand.Parameters.AddWithValue("?ORDERNUMBER", this.OrderNumber);
                     try
                     {
                         myConn.Open();
                         myCommand.ExecuteNonQuery();
                     }
-                    catch(Exception err)
+                    catch (Exception err)
                     {
-                        if(OnError != null)
+                        if (OnError != null)
                         {
                             OnError(this, new ErrorEventArgs(err.Message.ToString()));
                         }
@@ -900,7 +1035,7 @@ namespace Cousin.Audit
                     }
                     finally
                     {
-                        if(myConn.State != System.Data.ConnectionState.Closed)
+                        if (myConn.State != System.Data.ConnectionState.Closed)
                             myConn.Close();
                     }
                     foreach (int i in Box.Keys)
@@ -910,7 +1045,7 @@ namespace Cousin.Audit
                             myCommand.CommandText = "INSERT INTO audit_box (order_number, upc_number, box_number, box_qty, box_weight)" +
                                 " VALUES (?ORDERNUMBER, ?UPCNUMBER, ?BOXNUMBER, ?BOXQTY, ?BOXWEIGHT)";
                             myCommand.Parameters.Clear();
-                            myCommand.Parameters.AddWithValue("?ORDERNUMBER", this.orderNumber);
+                            myCommand.Parameters.AddWithValue("?ORDERNUMBER", this.OrderNumber);
                             myCommand.Parameters.AddWithValue("?UPCNUMBER", item.UPCNumber);
                             myCommand.Parameters.AddWithValue("?BOXNUMBER", i);
                             myCommand.Parameters.AddWithValue("?BOXQTY", item.ScannedQTY);
@@ -922,7 +1057,7 @@ namespace Cousin.Audit
                             }
                             catch (Exception err)
                             {
-                                if(OnError != null)
+                                if (OnError != null)
                                 {
                                     OnError(this, new ErrorEventArgs(err.Message.ToString()));
                                 }
@@ -943,15 +1078,15 @@ namespace Cousin.Audit
                     // audit_box_header
                     myCommand.CommandText = "DELETE FROM audit_box_header WHERE order_number = ?ORDERNUMBER and box_number <> '1'";
                     myCommand.Parameters.Clear();
-                    myCommand.Parameters.AddWithValue("?ORDERNUMBER", this.orderNumber);
+                    myCommand.Parameters.AddWithValue("?ORDERNUMBER", this.OrderNumber);
                     try
                     {
                         myConn.Open();
                         myCommand.ExecuteNonQuery();
                     }
-                    catch(Exception err)
+                    catch (Exception err)
                     {
-                        if(OnError != null)
+                        if (OnError != null)
                         {
                             OnError(this, new ErrorEventArgs(err.Message.ToString()));
                         }
@@ -962,23 +1097,23 @@ namespace Cousin.Audit
                     }
                     finally
                     {
-                        if(myConn.State != System.Data.ConnectionState.Closed)
+                        if (myConn.State != System.Data.ConnectionState.Closed)
                             myConn.Close();
                     }
 
                     myCommand.CommandText = "UPDATE audit_box_header" +
                         " SET box_weight = ?BOXWEIGHT WHERE order_number = ?ORDERNUMBER and box_number = '1'";
                     myCommand.Parameters.Clear();
-                    myCommand.Parameters.AddWithValue("?ORDERNUMBER", this.orderNumber);
+                    myCommand.Parameters.AddWithValue("?ORDERNUMBER", this.OrderNumber);
                     myCommand.Parameters.AddWithValue("?BOXWEIGHT", GetBoxWeight(1));
                     try
                     {
                         myConn.Open();
                         myCommand.ExecuteNonQuery();
                     }
-                    catch(Exception err)
+                    catch (Exception err)
                     {
-                        if(OnError != null)
+                        if (OnError != null)
                         {
                             OnError(this, new ErrorEventArgs(err.Message.ToString()));
                         }
@@ -989,19 +1124,19 @@ namespace Cousin.Audit
                     }
                     finally
                     {
-                        if(myConn.State != System.Data.ConnectionState.Closed)
+                        if (myConn.State != System.Data.ConnectionState.Closed)
                             myConn.Close();
                     }
 
-                    foreach(int i in Box.Keys)
+                    foreach (int i in Box.Keys)
                     {
-                        if(i > 1)
+                        if (i > 1)
                         {
                             myCommand.CommandText = "INSERT INTO audit_box_header" +
                                 " (order_number, box_weight, box_number)" +
                                 " VALUES (?ORDERNUMBER, ?BOXWEIGHT, ?BOXNUMBER)";
                             myCommand.Parameters.Clear();
-                            myCommand.Parameters.AddWithValue("?ORDERNUMBER", this.orderNumber);
+                            myCommand.Parameters.AddWithValue("?ORDERNUMBER", this.OrderNumber);
                             myCommand.Parameters.AddWithValue("?BOXWEIGHT", GetBoxWeight(i));
                             myCommand.Parameters.AddWithValue("?BOXNUMBER", i);
                             try
@@ -1009,9 +1144,9 @@ namespace Cousin.Audit
                                 myConn.Open();
                                 myCommand.ExecuteNonQuery();
                             }
-                            catch(Exception err)
+                            catch (Exception err)
                             {
-                                if(OnError != null)
+                                if (OnError != null)
                                 {
                                     OnError(this, new ErrorEventArgs(err.Message.ToString()));
                                 }
@@ -1022,7 +1157,7 @@ namespace Cousin.Audit
                             }
                             finally
                             {
-                                if(myConn.State != System.Data.ConnectionState.Closed)
+                                if (myConn.State != System.Data.ConnectionState.Closed)
                                     myConn.Close();
                             }
                         }
@@ -1034,16 +1169,16 @@ namespace Cousin.Audit
                     string myToday = DateTime.Today.Year.ToString() + "-" + DateTime.Today.Month.ToString().PadLeft(2, '0') + "-" + DateTime.Today.Day.ToString().PadLeft(2, '0');
                     myCommand.CommandText = "UPDATE audit_header SET status = 3, audit_date = ?TODAYSDT WHERE order_number = ?ORDERNUMBER";
                     myCommand.Parameters.Clear();
-                    myCommand.Parameters.AddWithValue("?ORDERNUMBER", this.orderNumber);
+                    myCommand.Parameters.AddWithValue("?ORDERNUMBER", this.OrderNumber);
                     myCommand.Parameters.AddWithValue("?TODAYSDT", myToday);
                     try
                     {
                         myConn.Open();
                         myCommand.ExecuteNonQuery();
                     }
-                    catch(Exception err)
+                    catch (Exception err)
                     {
-                        if(OnError != null)
+                        if (OnError != null)
                         {
                             OnError(this, new ErrorEventArgs(err.Message.ToString()));
                         }
@@ -1054,7 +1189,7 @@ namespace Cousin.Audit
                     }
                     finally
                     {
-                        if(myConn.State != System.Data.ConnectionState.Closed)
+                        if (myConn.State != System.Data.ConnectionState.Closed)
                             myConn.Close();
                     }
 
@@ -1062,13 +1197,13 @@ namespace Cousin.Audit
 
                     #region audit_detail
                     // audit_detail
-                    foreach(ItemOrdered itmOrdrd in ItemsOrdered.Values)
+                    foreach (ItemOrdered itmOrdrd in ItemsOrdered.Values)
                     {
                         myCommand.CommandText = "UPDATE audit_detail" +
                             " SET scanned_qty = ?SCANNEDQTY" +
                             " WHERE order_number = ?ORDERNUMBER AND upc_number = ?UPCNUMBER";
                         myCommand.Parameters.Clear();
-                        myCommand.Parameters.AddWithValue("?ORDERNUMBER", this.orderNumber);
+                        myCommand.Parameters.AddWithValue("?ORDERNUMBER", this.OrderNumber);
                         myCommand.Parameters.AddWithValue("?SCANNEDQTY", itmOrdrd.ScannedQTY);
                         myCommand.Parameters.AddWithValue("?UPCNUMBER", itmOrdrd.UPCNumber);
                         try
@@ -1076,9 +1211,9 @@ namespace Cousin.Audit
                             myConn.Open();
                             myCommand.ExecuteNonQuery();
                         }
-                        catch(Exception err)
+                        catch (Exception err)
                         {
-                            if(OnError != null)
+                            if (OnError != null)
                             {
                                 OnError(this, new ErrorEventArgs(err.Message.ToString()));
                             }
@@ -1089,7 +1224,7 @@ namespace Cousin.Audit
                         }
                         finally
                         {
-                            if(myConn.State != System.Data.ConnectionState.Closed)
+                            if (myConn.State != System.Data.ConnectionState.Closed)
                                 myConn.Close();
                         }
                     }
@@ -1100,16 +1235,16 @@ namespace Cousin.Audit
 
                     myCommand.CommandText = "DELETE FROM sscc_shipping_number WHERE order_number = ?ORDERNUMBER and box_number >= ?NUMBOXS";
                     myCommand.Parameters.Clear();
-                    myCommand.Parameters.AddWithValue("?ORDERNUMBER", this.orderNumber);
+                    myCommand.Parameters.AddWithValue("?ORDERNUMBER", this.OrderNumber);
                     myCommand.Parameters.AddWithValue("?NUMBOXS", this.GetNextBoxNumber());
                     try
                     {
                         myConn.Open();
                         myCommand.ExecuteNonQuery();
                     }
-                    catch(Exception err)
+                    catch (Exception err)
                     {
-                        if(OnError != null)
+                        if (OnError != null)
                         {
                             OnError(this, new ErrorEventArgs(err.Message.ToString()));
                         }
@@ -1120,7 +1255,7 @@ namespace Cousin.Audit
                     }
                     finally
                     {
-                        if(myConn.State != System.Data.ConnectionState.Closed)
+                        if (myConn.State != System.Data.ConnectionState.Closed)
                             myConn.Close();
                     }
 
@@ -1131,10 +1266,11 @@ namespace Cousin.Audit
 
             //Added 3/30/2015 by Jason
             //If order is finished, write logged errors to database
-            if (GetCustomer(this.orderNumber) == Customer.WalmartUS)
+            //if (GetCustomer(this.orderNumber) == Customer.WalmartUS)
+            if (GetCustomer(this.OrderNumber) != Customer.Generic)
             //if (1 == 2)
             {
-                logMissingItems();
+                LogMissingItems();
                 int needed = 0;
                 int converted = 0;
                 foreach (ItemOrdered item in ItemsOrdered.Values)
@@ -1147,7 +1283,7 @@ namespace Cousin.Audit
 
 
             // Delete items from order marked out of stock in mysql/webpage
-            string webpage = "http://192.168.123.21/stockfix.php?ordernumber=" + orderNumber;
+            string webpage = "http://192.168.123.21/stockfix.php?ordernumber=" + OrderNumber;
             Console.WriteLine(webpage);
             System.Net.HttpWebRequest request = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(webpage);
             System.Net.HttpWebResponse response = (System.Net.HttpWebResponse)request.GetResponse();
@@ -1156,10 +1292,7 @@ namespace Cousin.Audit
             response.Close();
 
             // OrderFinished EVENT
-            if (OnOrderFinished != null)
-            {
-                OnOrderFinished(this, new EventArgs());
-            }
+            OnOrderFinished?.Invoke(this, new EventArgs());
 
         }
 
@@ -1179,7 +1312,7 @@ namespace Cousin.Audit
         public string[] GetItemsOrdered()
         {
             List<string> items = new List<string>();
-            foreach(ItemOrdered itOrd in ItemsOrdered.Values)
+            foreach (ItemOrdered itOrd in ItemsOrdered.Values)
             {
                 items.Add(itOrd.ToString());
             }
@@ -1190,9 +1323,9 @@ namespace Cousin.Audit
         public string[] GetMissingItems()
         {
             List<string> items = new List<string>();
-            foreach(ItemOrdered itOrd in ItemsOrdered.Values)
+            foreach (ItemOrdered itOrd in ItemsOrdered.Values)
             {
-                if(itOrd.ScannedQTY < itOrd.OrderedQTY)
+                if (itOrd.ScannedQTY < itOrd.OrderedQTY)
                 {
                     items.Add(itOrd.ToString());
                     //if bool myLoggedMissing is true then missing items already logged
@@ -1203,7 +1336,7 @@ namespace Cousin.Audit
             }
             //Set bool myLoggedMissing to true so will not log missing items if sheet printed again
             //myLoggedMissing = true;
-            logMissingItems();
+            LogMissingItems();
 
             items.Sort();
 
@@ -1216,18 +1349,18 @@ namespace Cousin.Audit
             List<string> missingItemsPages = new List<string>();
             StringBuilder sb = null;
 
-            foreach(ItemOrdered itOrd in ItemsOrdered.Values)
+            foreach (ItemOrdered itOrd in ItemsOrdered.Values)
             {
-                if(sb == null)
+                if (sb == null)
                 {
                     sb = new StringBuilder();
-                    sb.AppendLine("Page " + ( missingItemsPages.Count + 1 ));
+                    sb.AppendLine("Page " + (missingItemsPages.Count + 1));
                     sb.AppendLine();
-                    sb.AppendLine("Order Number: " + this.orderNumber);
+                    sb.AppendLine("Order Number: " + this.OrderNumber);
                     sb.AppendLine("Bin Loc".PadRight(13) + "Item".PadRight(12) + "Description".PadRight(31) + "Ordered".PadRight(10) + "Scanned".PadRight(10));
                 }
 
-                if(itOrd.ScannedQTY < itOrd.OrderedQTY)
+                if (itOrd.ScannedQTY < itOrd.OrderedQTY)
                 {
                     sb.Append(itOrd.BinLOC.PadRight(13));
                     sb.Append(itOrd.ItemNumber.PadRight(12));
@@ -1235,7 +1368,7 @@ namespace Cousin.Audit
                     sb.Append(itOrd.OrderedQTY.ToString().PadRight(10));
                     sb.AppendLine(itOrd.ScannedQTY.ToString().PadRight(10));
 
-                    if(currLine > 58)
+                    if (currLine > 58)
                     {
                         currLine = 0;
                         missingItemsPages.Add(sb.ToString());
@@ -1253,9 +1386,9 @@ namespace Cousin.Audit
             }
             //Set bool myLoggedMissing to true so will not log missing items if sheet printed again
             //myLoggedMissing = true;
-            logMissingItems();
+            LogMissingItems();
 
-            if(currLine > 0)
+            if (currLine > 0)
             {
                 missingItemsPages.Add(sb.ToString());
             }
@@ -1266,7 +1399,7 @@ namespace Cousin.Audit
         public string[] GetBoxItems(int boxNumber)
         {
             List<string> items = new List<string>();
-            foreach(ItemScanned itScn in Box[boxNumber].Values)
+            foreach (ItemScanned itScn in Box[boxNumber].Values)
             {
                 items.Add(itScn.ToString());
             }
@@ -1285,32 +1418,26 @@ namespace Cousin.Audit
             }
             Box[boxNumber].Clear();
 
-            if (OnOrderChanged != null)
-            {
-                OnOrderChanged(this, new EventArgs());
-            }
+            OnOrderChanged?.Invoke(this, new EventArgs());
         }
 
         public void RemoveItemFromBox(int boxNumber, string containsUPC)
         {
             int pos = containsUPC.IndexOf("016321");
             string upc = containsUPC.Substring(pos, 12);
-            
-            if(ItemsOrdered.ContainsKey(upc) && Box[boxNumber].ContainsKey(upc))
+
+            if (ItemsOrdered.ContainsKey(upc) && Box[boxNumber].ContainsKey(upc))
             {
                 ItemsOrdered[upc].ScannedQTY -= Box[boxNumber][upc].ScannedQTY;
                 Box[boxNumber].Remove(upc);
             }
 
-            if(Box[boxNumber].Values.Count < 1)
+            if (Box[boxNumber].Values.Count < 1)
             {
                 RemoveBox(boxNumber);
             }
 
-            if(OnOrderChanged != null)
-            {
-                OnOrderChanged(this, new EventArgs());
-            }
+            OnOrderChanged?.Invoke(this, new EventArgs());
         }
 
         public void RemoveBox(int boxNumber)
@@ -1327,10 +1454,7 @@ namespace Cousin.Audit
 
         public void Kill()
         {
-            if(OnOrderKilled != null)
-            {
-                OnOrderKilled(this, new EventArgs());
-            }
+            OnOrderKilled?.Invoke(this, new EventArgs());
         }
 
         #endregion
@@ -1340,7 +1464,7 @@ namespace Cousin.Audit
 
         public override string ToString()
         {
-            return this.orderNumber;
+            return this.OrderNumber;
         }
 
         #endregion
@@ -1463,7 +1587,7 @@ namespace Cousin.Audit
             int orderedQTY;
             float scannedWeight;
 
-            public ItemScanned(string UPC, string itemNumber, string description,int orderedQTY, int scannedQTY, float scannedWeight)
+            public ItemScanned(string UPC, string itemNumber, string description, int orderedQTY, int scannedQTY, float scannedWeight)
             {
                 this.upcNumber = UPC;
                 this.itemNumber = itemNumber;
@@ -1631,8 +1755,8 @@ namespace Cousin.Audit
             //Constructor
             public MistakeLogger(string orderNumber)
             {
-               Items = new Dictionary<string, Item>();
-               this.OrderNumber = orderNumber;
+                Items = new Dictionary<string, Item>();
+                this.OrderNumber = orderNumber;
             }
 
             //Object.ToString() will return the Order Number
@@ -1644,11 +1768,92 @@ namespace Cousin.Audit
             //Add Item
             public void LogItem(string number, string description, string upc, string binLoc, int conversionFactor, Item.Reason problem)
             {
-                if(Items.ContainsKey(upc))
+                if (Items.ContainsKey(upc))
                     Items[upc].Scan();
                 else
                     Items.Add(upc, new Item(number, description, binLoc, conversionFactor, problem));
             }
+
+
+            // Added by Jason on 11/30/2017
+            public static Dictionary<string, string> GetItemInfo(string upc)
+            {
+                string itemNumber = string.Empty;
+                string itemDescription = string.Empty;
+                string itemBay = string.Empty;
+                //Customer currentCustomer;
+
+                using (MySqlConnection myConn = new MySqlConnection(ConnectionString))
+                {
+                    using (MySqlCommand myCommand = myConn.CreateCommand())
+                    {
+                        MySqlDataReader myReader;
+                        myCommand.CommandText = @"SELECT SKULocation.ItemNumber, SKULocation.Description, SKULocation.BayLocation
+                            FROM SKULocation WHERE SKULocation.UPC = ?UPC
+                            LIMIT 1";
+                        myCommand.Parameters.Clear();
+                        myCommand.Parameters.AddWithValue("?UPC", upc);
+
+                        try
+                        {
+                            myConn.Open();
+                            myReader = myCommand.ExecuteReader();
+                            if (myReader.HasRows)
+                            {
+                                while (myReader.Read())
+                                {
+                                    itemNumber = myReader.GetString(myReader.GetOrdinal("ItemNumber"));
+                                    itemDescription = myReader.GetString(myReader.GetOrdinal("Description"));
+                                    itemBay = myReader.GetString(myReader.GetOrdinal("BayLocation"));
+                                    break;
+                                }
+                            }
+                            else
+                            {
+                                if (OnError != null)
+                                {
+                                    //OnError(null, new ErrorEventArgs("Order " + orderNumber + " doesn't exist"));
+                                }
+                                else
+                                {
+                                    //throw new ApplicationException("Order " + orderNumber + " doesn't exist");
+                                }
+                            }
+                        }
+                        catch (ApplicationException)
+                        {
+                            throw;
+                        }
+                        catch (Exception err)
+                        {
+                            if (OnMySqlError != null)
+                            {
+                                OnMySqlError(null, new ErrorEventArgs(err.Message.ToString()));
+                            }
+                            else
+                            {
+                                throw new ApplicationException(err.Message.ToString());
+                            }
+                        }
+                        finally
+                        {
+                            if (myConn.State != System.Data.ConnectionState.Closed)
+                            {
+                                myConn.Close();
+                            }
+                        }
+                    }
+                }
+
+                Dictionary<string, string> itemInfo = new Dictionary<string, string>(3)
+                {
+                    { "itemNumber", itemNumber },
+                    { "itemDescription", itemDescription },
+                    { "itemBay", itemBay }
+                };
+                return itemInfo;
+            }
+
 
             //Commit items to log table
             public void LogWrite(int orderScans, int orderConvFactor)
@@ -1663,8 +1868,9 @@ namespace Cousin.Audit
                     {
                         foreach (string upc in Items.Keys)
                         {
-                            myCommand.CommandText = "INSERT INTO log (order_number, audit_date, item, description, upc, problem, scans, conversion_factor)" +
-                                " VALUES (?ORDERNUMBER, ?AUDITDATE, ?ITEM, ?DESCRIPTION, ?UPC, ?PROBLEM, ?SCANS, ?CONVERSIONFACTOR)";
+                            // Added cust_number, cust_name by Jason on 11/30/2017
+                            myCommand.CommandText = "INSERT INTO log (order_number, audit_date, item, description, upc, problem, scans, conversion_factor, cust_number, cust_name)" +
+                                " VALUES (?ORDERNUMBER, ?AUDITDATE, ?ITEM, ?DESCRIPTION, ?UPC, ?PROBLEM, ?SCANS, ?CONVERSIONFACTOR, ?CUSTNUM, ?CUSTNAME)";
                             myCommand.Parameters.Clear();
                             myCommand.Parameters.AddWithValue("?ORDERNUMBER", this.OrderNumber);
                             myCommand.Parameters.AddWithValue("?AUDITDATE", DateTime.Today);
@@ -1674,6 +1880,14 @@ namespace Cousin.Audit
                             myCommand.Parameters.AddWithValue("?PROBLEM", Items[upc].Problem);
                             myCommand.Parameters.AddWithValue("?SCANS", Items[upc].Scans);
                             myCommand.Parameters.AddWithValue("?CONVERSIONFACTOR", Items[upc].ConversionFactor);
+
+                            // Added by Jason on 11/30/2017
+                            Dictionary<string, string> customerNameNumber;
+                            customerNameNumber = GetCustomerNameNumber(OrderNumber);
+                            myCommand.Parameters.AddWithValue("?CUSTNUM", customerNameNumber["number"]);
+                            myCommand.Parameters.AddWithValue("?CUSTNAME", customerNameNumber["name"]);
+
+
                             try
                             {
                                 myLoggerDbCon.Open();
@@ -1692,23 +1906,23 @@ namespace Cousin.Audit
                 {
                     using (MySqlCommand myCommand = myLoggerDbCon.CreateCommand())
                     {
-                            myCommand.CommandText = "INSERT INTO log_scanned_order_info (order_number, audit_date, scans, conversion_factor)" +
-                                " VALUES (?ORDERNUMBER, ?AUDITDATE, ?SCANS, ?CONVERSIONFACTOR)";
-                            myCommand.Parameters.Clear();
-                            myCommand.Parameters.AddWithValue("?ORDERNUMBER", this.OrderNumber);
-                            myCommand.Parameters.AddWithValue("?AUDITDATE", DateTime.Today);
-                            myCommand.Parameters.AddWithValue("?SCANS", orderScans);
-                            myCommand.Parameters.AddWithValue("?CONVERSIONFACTOR", orderConvFactor);
-                            try
-                            {
-                                myLoggerDbCon.Open();
-                                myCommand.ExecuteNonQuery();
-                            }
-                            finally
-                            {
-                                if (myLoggerDbCon.State != System.Data.ConnectionState.Closed)
-                                    myLoggerDbCon.Close();
-                            }
+                        myCommand.CommandText = "INSERT INTO log_scanned_order_info (order_number, audit_date, scans, conversion_factor)" +
+                            " VALUES (?ORDERNUMBER, ?AUDITDATE, ?SCANS, ?CONVERSIONFACTOR)";
+                        myCommand.Parameters.Clear();
+                        myCommand.Parameters.AddWithValue("?ORDERNUMBER", this.OrderNumber);
+                        myCommand.Parameters.AddWithValue("?AUDITDATE", DateTime.Today);
+                        myCommand.Parameters.AddWithValue("?SCANS", orderScans);
+                        myCommand.Parameters.AddWithValue("?CONVERSIONFACTOR", orderConvFactor);
+                        try
+                        {
+                            myLoggerDbCon.Open();
+                            myCommand.ExecuteNonQuery();
+                        }
+                        finally
+                        {
+                            if (myLoggerDbCon.State != System.Data.ConnectionState.Closed)
+                                myLoggerDbCon.Close();
+                        }
                     }
                 }
             }

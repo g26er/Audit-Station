@@ -39,7 +39,7 @@ namespace Audit_Station_Console_Version
             //March 18th, 2015 edited app title to make it easier to know if a station has LE version - Jason
             Console.Title = " Audit Station " + Application.ProductVersion + " LE - Logging Edition";
 
-            myPrinter.PrintPage += new PrintPageEventHandler(myPrinter_PrintPage);
+            myPrinter.PrintPage += new PrintPageEventHandler(MyPrinter_PrintPage);
 
             Order.OnMySqlError += new Order.MySQLErrorHandler(Order_OnMySqlError);
             Order.OnError += new Order.ErrorHandler(Order_OnError);
@@ -619,9 +619,8 @@ namespace Audit_Station_Console_Version
                                                     {
                                                         if (i > 0)
                                                         {
-                                                            float weight;
-                                                            string typedWeight;
-                                                            bool okToGo;
+                                                        string typedWeight;
+                                                        bool okToGo;
 
                                                             Console.WriteLine();
                                                             Console.WriteLine("Please enter the weight of box {0}", i);
@@ -631,7 +630,7 @@ namespace Audit_Station_Console_Version
 
                                                                 Console.Write(">> ");
                                                                 typedWeight = Console.ReadLine();
-                                                                if (float.TryParse(typedWeight, out weight))
+                                                                if (float.TryParse(typedWeight, out float weight))
                                                                 {
                                                                     if (weight > 0 && weight < 100)
                                                                     {
@@ -653,9 +652,8 @@ namespace Audit_Station_Console_Version
                                                     {
                                                         if (i > 0)
                                                         {
-                                                            float weight;
-                                                            string typedWeight;
-                                                            bool okToGo;
+                                                        string typedWeight;
+                                                        bool okToGo;
 
                                                             Console.WriteLine();
                                                             Console.WriteLine("Please enter the weight of box {0}", i);
@@ -665,7 +663,7 @@ namespace Audit_Station_Console_Version
 
                                                                 Console.Write(">> ");
                                                                 typedWeight = Console.ReadLine();
-                                                                if (float.TryParse(typedWeight, out weight))
+                                                                if (float.TryParse(typedWeight, out float weight))
                                                                 {
                                                                     if (weight > 0 && weight < 100)
                                                                     {
@@ -858,8 +856,10 @@ namespace Audit_Station_Console_Version
 
         void PlayError()
         {
-            SoundPlayer myPlayer = new SoundPlayer();
-            myPlayer.Stream = Properties.Resources.error;
+            SoundPlayer myPlayer = new SoundPlayer
+            {
+                Stream = Properties.Resources.error
+            };
             myPlayer.Play();
         }
 
@@ -917,10 +917,10 @@ namespace Audit_Station_Console_Version
                 Order.SetStatus2(orderNumber);
             }
             //myOrder.OrderChanged += new Order.OrderChangedHandler(myOrder_OrderChanged);
-            myOrder.OnOrderFinished += new Order.OrderFinishedHandler(myOrder_OnOrderFinished);
-            myOrder.OnUPCScanned += new Order.UPCScannedHandler(myOrder_OnUPCScanned);
-            myOrder.OnNewBox += new Order.NewBoxHandler(myOrder_OnNewBox);
-            myOrder.OnOrderKilled += new Order.OrderKilledHandler(myOrder_OnOrderKilled);
+            myOrder.OnOrderFinished += new Order.OrderFinishedHandler(MyOrder_OnOrderFinished);
+            myOrder.OnUPCScanned += new Order.UPCScannedHandler(MyOrder_OnUPCScanned);
+            myOrder.OnNewBox += new Order.NewBoxHandler(MyOrder_OnNewBox);
+            myOrder.OnOrderKilled += new Order.OrderKilledHandler(MyOrder_OnOrderKilled);
         }
 
         string GetYorN()
@@ -963,7 +963,6 @@ namespace Audit_Station_Console_Version
         {
             foreach(int i in myOrder.Box.Keys)
             {
-                float weight;
                 string typedWeight;
                 bool okToGo;
 
@@ -975,7 +974,7 @@ namespace Audit_Station_Console_Version
 
                     Console.Write(">> ");
                     typedWeight = Console.ReadLine();
-                    if(float.TryParse(typedWeight, out weight))
+                    if(float.TryParse(typedWeight, out float weight))
                     {
                         if(weight > 0 && weight < 100)
                         {
@@ -1045,14 +1044,14 @@ namespace Audit_Station_Console_Version
         }
         */
 
-        void myOrder_OnUPCScanned(object sender, Order.UPCScannedEventArgs e)
+        void MyOrder_OnUPCScanned(object sender, Order.UPCScannedEventArgs e)
         {
             PlayDing(e.OrderFinished);
             Console.WriteLine();
             Console.WriteLine("Scanned {0} {1} for box {2} - Total Scanned:{3}  Ordered:{4}", e.ConversionFactor, e.UPCNumber, e.BoxNumber, e.ScannedQTY, e.OrderedQTY);
         }
 
-        void myOrder_OnNewBox(object sender, int boxNumber)
+        void MyOrder_OnNewBox(object sender, int boxNumber)
         {
             Cousin.ASN.ASN myASN = new Cousin.ASN.ASN();
             switch (Order.GetCustomer(myOrder.ToString()))
@@ -1090,7 +1089,7 @@ namespace Audit_Station_Console_Version
             }
         }
 
-        void myOrder_OnOrderFinished(object sender, EventArgs e)
+        void MyOrder_OnOrderFinished(object sender, EventArgs e)
         {
             switch(Order.GetCustomer(myOrder.ToString()))
             {
@@ -1213,13 +1212,13 @@ namespace Audit_Station_Console_Version
             Console.ResetColor();
         }
 
-        void myPrinter_PrintPage(object sender, PrintPageEventArgs e)
+        void MyPrinter_PrintPage(object sender, PrintPageEventArgs e)
         {
             Font printFont = new Font("Courier New", 10);
             e.Graphics.DrawString(txtToPrint, printFont, Brushes.Black, 25, 25);
         }
 
-        void myOrder_OnOrderKilled(object sender, EventArgs e)
+        void MyOrder_OnOrderKilled(object sender, EventArgs e)
         {
             Console.Clear();
             Console.WriteLine();
