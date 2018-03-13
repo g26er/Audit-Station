@@ -5,3 +5,12 @@ C:\Users\jason\Documents\GitHub\Audit-Station\Audit Station Console\Cousin.Audit
 C:\Users\jason\Documents\GitHub\Audit-Station\Audit Station Console\Cousin.Audit\obj\Debug\Cousin.Audit.Order.dll
 C:\Users\jason\Documents\GitHub\Audit-Station\Audit Station Console\Cousin.Audit\obj\Debug\Cousin.Audit.Order.pdb
 C:\Users\jason\Documents\GitHub\Audit-Station\Audit Station Console\Cousin.Audit\obj\Debug\Cousin.Audit.csprojResolveAssemblyReference.cache
+C:\Users\jason\Documents\GitHub\Audit-Station\Cousin.Audit\bin\Debug\Cousin.Audit.Order.dll.config
+C:\Users\jason\Documents\GitHub\Audit-Station\Cousin.Audit\bin\Debug\Cousin.Audit.Order.dll
+C:\Users\jason\Documents\GitHub\Audit-Station\Cousin.Audit\bin\Debug\Cousin.Audit.Order.pdb
+C:\Users\jason\Documents\GitHub\Audit-Station\Cousin.Audit\bin\Debug\MySql.Data.dll
+C:\Users\jason\Documents\GitHub\Audit-Station\Cousin.Audit\obj\Debug\Cousin.Audit.csprojResolveAssemblyReference.cache
+C:\Users\jason\Documents\GitHub\Audit-Station\Cousin.Audit\obj\Debug\Cousin.Audit.Order.dll
+C:\Users\jason\Documents\GitHub\Audit-Station\Cousin.Audit\obj\Debug\Cousin.Audit.Order.pdb
+C:\Users\jason\Documents\GitHub\Audit-Station\Cousin.Audit\obj\Debug\Cousin.Audit.csproj.CoreCompileInputs.cache
+C:\Users\jason\Documents\GitHub\Audit-Station\Cousin.Audit\obj\Debug\Cousin.Audit.csproj.CopyComplete

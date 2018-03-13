@@ -244,3 +244,6 @@ ModelManifest.xml
 # FAKE - F# Make
 .fake/
 *.exe
+
+Audit Station Console Version/bin/**
+Audit Station Console Version/bin/Release/Audit Station.exe

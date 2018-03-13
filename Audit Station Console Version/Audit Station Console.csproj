@@ -46,8 +46,8 @@
     <InstallUrl>\\cca\apps\auditstationle\</InstallUrl>
     <WebPage>publish.htm</WebPage>
     <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
-    <ApplicationRevision>9</ApplicationRevision>
-    <ApplicationVersion>1.1.0.%2a</ApplicationVersion>
+    <ApplicationRevision>1</ApplicationRevision>
+    <ApplicationVersion>1.2.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>true</BootstrapperEnabled>
@@ -117,10 +117,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <BaseApplicationManifest Include="Properties\app.manifest" />
+    <BaseApplicationManifest Include="Properties\app.manifest">
+      <SubType>Designer</SubType>
+    </BaseApplicationManifest>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </None>
     <None Include="Resources\orderdone.wav" />
   </ItemGroup>
